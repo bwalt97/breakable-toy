@@ -1,0 +1,29 @@
+version: "3"
+services:
+  #db:
+    #image: "postgres"
+    #container_name: "postgres"
+    #environment:
+    #  - POSTGRES_USER=postgres
+    #  - POSTGRES_PASSWORD=root
+    #  - POSTGRES_DB=postgres
+    #ports:
+    #  - "5432:5432"
+    #volumes:
+    #  - ./db-data:/var/lib/postgresql/data
+
+  backend:
+    image: "nest"
+    container_name: "nest"
+    ports:
+      - "8080:8080"
+    #depends_on:
+    #  - db
+
+  frontend:
+    image: "frontend"
+    container_name: "frontend"
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
