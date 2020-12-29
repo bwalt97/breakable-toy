@@ -1,1 +1,2 @@
-docker build --build-arg JAR_FILE=build/libs/*.jar -t nest .
+gradle clean build
+docker build --rm --build-arg JAR_FILE=build/libs/*.jar -t backend .

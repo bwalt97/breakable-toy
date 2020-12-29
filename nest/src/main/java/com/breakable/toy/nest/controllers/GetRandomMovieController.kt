@@ -1,14 +1,19 @@
 package com.breakable.toy.nest.controllers
 
-import com.breakable.toy.nest.models.UserMovieData
+import com.breakable.toy.nest.models.UserData
 import com.breakable.toy.nest.models.ListOfMovie
 import com.breakable.toy.nest.models.Movie
+import com.breakable.toy.nest.models.User
+import com.breakable.toy.nest.repositories.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.client.RestTemplate
+import java.util.*
 
+@CrossOrigin("http://localhost")
 @RestController
 @RequestMapping("/api")
 class GetRandomMovieController {
@@ -16,32 +21,40 @@ class GetRandomMovieController {
     @Value("\${api.key}")
     private lateinit var apiKey: String
 
-    @Value("\${api.fetch.limit}")
+    @Value("\${api.fetchLimit}")
     private lateinit var fetchLimit: Number
 
     @Autowired
     lateinit var restTemplate: RestTemplate
 
     @Autowired
-    lateinit var userMovieData: UserMovieData
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var userData: UserData
+
+    var user: User = User(UUID.randomUUID().toString(), "Test One", ArrayList<String>(), ArrayList<String>())
 
     @RequestMapping("/random")
     fun getRandomMovie(): Movie {
 
+        userRepository.insert(user)
+
+
         // Temporarily setting the values here for testing
-        userMovieData.addMovie("500")
-        userMovieData.addMovie("520763")
-        userMovieData.addMovie("330457")
+//        userMovieData.likeMovie("500")
+//        userMovieData.likeMovie("520763")
+//        userMovieData.likeMovie("330457")
 
         // First try to grab a recommended movie
-        if (userMovieData.likedMovieIds.isNotEmpty()) {
+        if (userData.likedMovieIds.isNotEmpty()) {
 
-            val movieId = userMovieData.likedMovieIds.random()
+            val movieId = userData.likedMovieIds.random()
 
             val movie = fetchFromRecommended(movieId)
 
             if (movie != null) {
-                userMovieData.addVisitedMovie(movie.id)
+                userData.addVisitedMovie(movie.id)
                 return movie
             }
         }
@@ -49,14 +62,22 @@ class GetRandomMovieController {
         // Grab a movie from popular list
         var movie = fetchFromPopular()
         var fetchAttempts = 0;
-        while (userMovieData.visitedMovieIds.contains(movie.id)) {
+        while (userData.visitedMovieIds.contains(movie.id) || movie.adult) {
             movie = fetchFromPopular()
 
             fetchAttempts += 1
             if (fetchAttempts >= fetchLimit.toInt()) { break }
         }
 
-        userMovieData.addVisitedMovie(movie.id)
+        userData.addVisitedMovie(movie.id)
+
+        if (movie.adult){
+            movie.id = ""
+            movie.overview = ""
+            movie.title = "Trouble loading new movie..."
+            movie.poster_path = ""
+        }
+
         return movie
     }
 
@@ -67,7 +88,7 @@ class GetRandomMovieController {
         )
 
         listOfMovie.results.forEach {
-            if (!userMovieData.visitedMovieIds.contains(it.id)) {
+            if (!userData.visitedMovieIds.contains(it.id) && !it.adult) {
                 return it
             }
         }
@@ -75,10 +96,10 @@ class GetRandomMovieController {
     }
 
     private fun fetchFromPopular(): Movie {
-        val page = (1..500).random()
+        val page = (1..369).random() //500
 
         val listOfMovie = restTemplate.getForObject(
-                "https://api.themoviedb.org/3/movie/popular?api_key=$apiKey&language=en-US&page=$page",
+                "https://api.themoviedb.org/3/movie/top_rated?api_key=$apiKey&language=en-US&page=$page",
                 ListOfMovie::class.java
         )
 

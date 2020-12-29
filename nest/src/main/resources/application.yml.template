@@ -1,0 +1,3 @@
+api:
+  key: <insert your own MovieDB api key>
+  fetchLimit: 10
