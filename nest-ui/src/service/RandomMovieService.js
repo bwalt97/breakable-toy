@@ -1,11 +1,16 @@
 import axios from 'axios'
 
-const API_URL = 'http://localhost:8080/api/random'
+const FETCH_URL = 'http://localhost:8080/api/random'
+const LIKE_URL = 'http://localhost:8080/api/like/'
 
 class RandomMovieService {
 
     getRandomMovie() {
-        return axios.get(API_URL);
+        return axios.get(FETCH_URL);
+    }
+
+    likeMovie(movieId) {
+        return axios.patch(LIKE_URL + movieId);
     }
 
 }
